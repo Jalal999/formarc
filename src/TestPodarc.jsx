@@ -1,8 +1,7 @@
 import React from 'react';
-import Podarc from './Podarc'; 
+import Podarc from './Formarc'; 
 
 const TestPodarc = () => {
-
   const validators = [
     {
       name: 'user.name',
@@ -64,11 +63,12 @@ const TestPodarc = () => {
   const fields = [
     {
       type: 'text',
-      name: 'user.name',
+      name: 'name',
       required: true,
       label: 'Name',
-      display: 'nested',
-      value: 'dfs'
+      // display: 'nested',
+      value: 'dfs',
+      ignoreFor: 'edit'
     },
     {
       type: 'text',
@@ -108,14 +108,14 @@ const TestPodarc = () => {
 
   const handleSubmit = () => {
     console.log('Form submitted!');
-    // Add any additional logic after form submission if needed
+    // Add any additional logic after form submission if needed(for ex: navigate)
   };
 
   return (
     <div>
       <h1>Test Podarc Form</h1>
       <Podarc
-        // type='view'
+        type='edit'
         inputs={fields}
         validators={validators}
         initialFormValues={{ test: 'jared', 'user.name': 'jalal' }}

@@ -13,3 +13,47 @@ export const normalizeNestedValues = (values) => {
     })
     return values
 }
+
+export const customRequest = async (apiUrl, method, formValues, additionalParams) => {
+    const response = await fetch(apiUrl, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formValues,
+          ...additionalParams,
+        }),
+    });
+    return response
+}
+
+export const filterFormValues = (formValues, fields) => {
+    const fieldsIgnoredForSave = convertToArray(fields).filter(
+        (field) =>
+          field.ignoreFor === 'edit' ||
+          field.ignoreFor === 'save'
+    )
+
+    const keys = fieldsIgnoredForSave.map((field) => field.name)
+
+    console.log('keys: ', keys)
+    // TODO: nested olanlari filter elemir
+    return Object.keys(formValues)
+        .filter((key) => !keys.includes(key))
+        .reduce((acc, key) => {
+            acc[key] = formValues[key]
+            return acc
+        }, {})
+}
+
+export const convertToArray = (obj) => {
+    if (!obj) {
+        return []
+    }
+    if (Array.isArray(obj)) {
+        return obj
+    }
+
+    return [obj]
+}
