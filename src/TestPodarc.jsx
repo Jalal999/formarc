@@ -5,60 +5,34 @@ const TestPodarc = () => {
   const validators = [
     {
       name: 'user.name',
-      validator: val => val ? val?.length > 8 : false,
-      errorMessage: 'Name field should have more than 8 characters...'
+      min: {
+        value: 2, 
+        error: 'Should have at least 2 characters...'
+      },
+      max: {
+        value: 8, 
+        error: 'Should have at least 8 characters...'
+      },
     },
     {
-      name: 'user.name',
-      validator: val => val.length < 20,
-      errorMessage: 'Name field should have less than 20 characters...'
+      name: 'password',
+      minLength: {
+        value: 5, 
+        error: 'Should have at least 5 characters...'
+      },
+      maxLength: {
+        value: 8,
+        error: 'Should have at least 12 characters...'
+      },
     },
     {
       name: 'email',
-      validator: val => val ? val?.length > 7 : false,
-      errorMessage: 'Email field should have more than 7 characters...'
+      pattern: {
+        regex: '',
+        error: 'email should follow pattern'
+      },
     }
   ]
-  ///////
-  // THE OTHER WAY OF IMPLEMENTING VALIDATORS - DON'T FORGET TO ADAPT THIS ACCORDING TO SETERRORMSH FUNC
-  ///////
-  // const validators = [
-  //   {
-  //     name: 'user.name',
-  //     validate: (value) => {
-  //       if (!value) {
-  //         return 'Name is required.';
-  //       }
-  //       if (value.length < 8) {
-  //         return 'Name should have at least 8 characters.';
-  //       }
-  //       if (value.length > 20) {
-  //         return 'Name should have less than 20 characters.';
-  //       }
-  //       return ''; // No error
-  //     }
-  //   }
-  // ];
-
-  ////////
-  // THE OTHER WAY OF IMPLEMENTING VALIDATION - VALIDATE FUNCTION AS IT IS USED IN FORMIK(PASSING VALIDATE FUNCTION AS PROP TO FORMIK COMPONENT)
-  ///////
-  // const validate = (values) => {
-  //   let errors = {};
-  //   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
-  //   if (!values.email) {
-  //     errors.email = "Email is required";
-  //   } else if (!regex.test(values.email)) {
-  //     errors.email = "Invalid Email";
-  //   }
-  //   if (!values.password) {
-  //     errors.password = "Password is required";
-  //   } else if (values.password.length < 4) {
-  //     errors.password = "Password too short";
-  //   }
-  //   return errors;
-  // };
-
 
   const fields = [
     {
@@ -119,6 +93,7 @@ const TestPodarc = () => {
         inputs={fields}
         validators={validators}
         initialFormValues={{ test: 'jared', 'user.name': 'jalal' }}
+        validateOnSubmit={true}
         onSubmit={handleSubmit}
         apiEndpoint="https://example.com/api/form"
         additionalParams={{

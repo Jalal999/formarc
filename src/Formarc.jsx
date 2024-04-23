@@ -5,10 +5,35 @@ import { normalizeNestedValues, filterFormValues, customRequest } from './helper
 import { useFormarc } from './useFormarc';
 // TODO: add type feature to validators property to define showing error messages during onChange or after submit (can be another prop for Podarc: validateOnChange, validateOnSubmit as in formarc)
 // TODO: add ignoreFor = 'patch' implementation(PARTIALLY DONE: for nested need to implement filter)
+// TODO: custom request-i update etmek lazimdir. GET uchun ferqlidir biraz.
 
+const Formarc = ({ 
+  type = 'save',
+  inputs, 
+  validators,
+  initialFormValues,
+  validateOnChange = true,
+  validateOnSubmit = false,
+  validateOnBlur = false,
+  onSubmit,
+  apiEndpoint,
+  additionalParams,
+  className,
+  style,
+  inputClassName,
+  selectClassName,
+  submitClassName,
+ }) => {
+  const [validationType, setValidationType] = useState('onChange')
+  const {
+    formValues,
+    setFormValues,
+    handleChange,
+    handleDisabledFieldChange,
+    validateForm,
+    errorMessages
+  } = useFormarc(initialFormValues, validators, validationType)
 
-const Formarc = ({ type = 'save', inputs, validators, initialFormValues, className, style, inputClassName, selectClassName, submitClassName, onSubmit, apiEndpoint, additionalParams }) => {
-  const {formValues, setFormValues, handleChange, handleDisabledFieldChange, errorMessages} = useFormarc(initialFormValues, validators)
   // useEffect(() => {
   //   setFormValues(normalizeNestedValues(formValues))
   // }, [formValues])
@@ -27,6 +52,10 @@ const Formarc = ({ type = 'save', inputs, validators, initialFormValues, classNa
     setFormValues(normalizeNestedValues(initialFormValues))
   }, [])
 
+  useEffect(() => {
+    setValidationType(validateOnSubmit ? 'onSubmit' : validateOnBlur ? 'onBlur' : 'onChange')
+  }, [validateOnSubmit, validateOnBlur])
+
   const getValueToShowInField = (field) => {
     if(field.disabled) {
       return field.value
@@ -36,6 +65,7 @@ const Formarc = ({ type = 'save', inputs, validators, initialFormValues, classNa
     return formValues[field.name]
   }
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     let apiUrl;
@@ -43,6 +73,7 @@ const Formarc = ({ type = 'save', inputs, validators, initialFormValues, classNa
       const params = normalizeParams(additionalParams.params)
       apiUrl = `${apiEndpoint}${params !== undefined ? params : ''}`
     }
+
     const method =
       type === 'save' ? 'POST' :        // If type is 'save', method is 'POST' to create new record
       type === 'edit' ? 'PATCH' :       // If type is 'edit', method is 'PATCH' to update partially
@@ -50,10 +81,13 @@ const Formarc = ({ type = 'save', inputs, validators, initialFormValues, classNa
       'GET';                            // For any other value of type(meaning 'view'), method is 'GET'
 
     try {
-      console.log('formValues: ', formValues)
       const payload = filterFormValues(formValues, inputs)
-      console.log('filtered formValues: ', payload)
 
+      if(validationType === 'onSubmit') {
+        validateForm(payload, validators)
+      }
+
+      // add conditional check - if there is error message - request should NOT be sent
       const response = customRequest(apiUrl, method, payload, additionalParams)
       if (!response.ok) {
         throw new Error('Failed to submit form');

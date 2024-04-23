@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { normalizeNestedValues } from './helpers/utils';
 
-export const useFormarc = (initialFormValues = {}, validators) => {
+export const useFormarc = (initialFormValues = {}, validators, validationType) => {
     const [formValues, setFormValues] = useState(normalizeNestedValues(initialFormValues))
     const [errorMessages, setErrorMessages] = useState({})
 
@@ -35,7 +35,7 @@ export const useFormarc = (initialFormValues = {}, validators) => {
             [name]: value
           }));
         }
-        setErrorMessageForField(e)
+        if(validationType === 'onChange') validateField(e)
     };
 
     const handleDisabledFieldChange = (field, value) => {
@@ -55,22 +55,74 @@ export const useFormarc = (initialFormValues = {}, validators) => {
         }
     }
 
-    // error messages for fields are being set during the onChange. check ToDo to set it during the submit as well
-    const setErrorMessageForField = (e) => {
+    const validateField = (e) => {
         const { name, value } = e.target;
         validators.map(validation => {
-        if(validation.name === name && !validation.validator(value)) {
+        if(validation.name === name) {
+          if(validation.min && value < validation.min.value) {
             setErrorMessages((prevValues) => ({
-            ...prevValues,
-            [name]: validation.errorMessage,
-            }));
-        } else {
+              ...prevValues,
+              [name]: validation.min.error,
+              }));
+          } else if(validation.max && value > validation.max.value) {
             setErrorMessages((prevValues) => ({
-            ...prevValues,
-            [name]: '',
+              ...prevValues,
+              [name]: validation.max.error,
+              }));
+          } else if(validation.minLength && value.length < validation.minLength.value) {
+            setErrorMessages((prevValues) => ({
+              ...prevValues,
+              [name]: validation.minLength.error,
             }));
-        }
+          } else if(validation.maxLength && value.length > validation.maxLength.value) {
+            setErrorMessages((prevValues) => ({
+              ...prevValues,
+              [name]: validation.maxLength.error,
+            }));
+          } else {
+              setErrorMessages((prevValues) => ({
+                ...prevValues,
+                [name]: '',
+              }));
+            }
+         }
         })
+    }
+
+    const validateForm = (payload, validators) => {
+      Object.entries(payload).forEach(([key, value]) => {
+        validators.map(validation => {
+          if(validation.name === key) {
+            if(validation.min && value < validation.min.value) {
+              setErrorMessages((prevValues) => ({
+                ...prevValues,
+                [key]: validation.min.error,
+                }));
+            } else if(validation.max && value > validation.max.value) {
+              setErrorMessages((prevValues) => ({
+                ...prevValues,
+                [key]: validation.max.error,
+                }));
+            } else if(validation.minLength && value.length < validation.minLength.value) {
+              setErrorMessages((prevValues) => ({
+                ...prevValues,
+                [key]: validation.minLength.error,
+              }));
+            } else if(validation.maxLength && value.length > validation.maxLength.value) {
+              setErrorMessages((prevValues) => ({
+                ...prevValues,
+                [key]: validation.maxLength.error,
+              }));
+            } else {
+                setErrorMessages((prevValues) => ({
+                  ...prevValues,
+                  [key]: '',
+                }));
+              }
+           }
+          })
+        // TODO: validate by going through valdiators and payload values
+      });
     }
 
     // const save = useCallback(
@@ -123,6 +175,7 @@ export const useFormarc = (initialFormValues = {}, validators) => {
         setFormValues, 
         handleChange, 
         handleDisabledFieldChange,
+        validateForm,
         // save,
         errorMessages
     }
