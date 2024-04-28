@@ -1,17 +1,18 @@
 export const normalizeNestedValues = (values) => {
-    Object.keys(values).forEach(key => {
-        const value = values[key]
+    var updatedValues = values
+    Object.keys(updatedValues).forEach(key => {
+        const value = updatedValues[key]
         if(key.includes('.')) {
             const nestedValueName = key.split('.')[1]
             const parentValueName = key.split('.')[0]
             const nestedValue =  {
                 [nestedValueName]: value
             }
-            values[parentValueName] = nestedValue
-            delete values[key]
+            updatedValues[parentValueName] = nestedValue
+            delete updatedValues[key]
         }
     })
-    return values
+    return updatedValues
 }
 
 export const customRequest = async (apiUrl, method, formValues, additionalParams) => {
@@ -38,6 +39,7 @@ export const filterFormValues = (formValues, fields) => {
     const keys = fieldsIgnoredForSave.map((field) => field.name)
 
     console.log('keys: ', keys)
+    
     // TODO: nested olanlari filter elemir
     return Object.keys(formValues)
         .filter((key) => !keys.includes(key))
@@ -56,4 +58,13 @@ export const convertToArray = (obj) => {
     }
 
     return [obj]
+}
+
+export const formulateWithInitialValues = (formValues, fields) => {
+    fields.map(field => {
+        if(!formValues[field.name]) {
+            formValues[field.name] = field.type === 'checkbox' ? false : ''
+        }
+    })
+    return formValues
 }

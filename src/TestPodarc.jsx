@@ -5,11 +5,11 @@ const TestPodarc = () => {
   const validators = [
     {
       name: 'user.name',
-      min: {
+      minLength: {
         value: 2, 
         error: 'Should have at least 2 characters...'
       },
-      max: {
+      maxLength: {
         value: 8, 
         error: 'Should have at least 8 characters...'
       },
@@ -31,18 +31,22 @@ const TestPodarc = () => {
         regex: '',
         error: 'email should follow pattern'
       },
+    },
+    {
+      name: 'checkbox',
+      required: 'Field is required'
     }
   ]
 
   const fields = [
     {
       type: 'text',
-      name: 'name',
+      name: 'user.name',
       required: true,
       label: 'Name',
-      // display: 'nested',
-      value: 'dfs',
-      ignoreFor: 'edit'
+      display: 'nested',
+      // value: 'dfs',
+      // ignoreFor: 'edit'
     },
     {
       type: 'text',
@@ -56,8 +60,21 @@ const TestPodarc = () => {
     {
       type: 'text',
       name: 'email',
-      required: true,
+      // required: true,
       label: 'Email',
+      value: ''
+    },
+    {
+      type: 'date',
+      name: 'date',
+      // required: true,
+      label: 'Date',
+      // value: '2024-04-12'
+    },
+    {
+      type: 'checkbox',
+      name: 'checkbox',
+      label: 'Checkbox Test',
     },
     {
       type: 'text',
@@ -76,7 +93,7 @@ const TestPodarc = () => {
         { id: 3, name: 'Tokyo' },
       ],
       label: 'City',
-      visibleIf: (formValues) => formValues.user.name
+      visibleIf: (formValues) => formValues?.user?.name
     }
   ];
 
@@ -92,7 +109,7 @@ const TestPodarc = () => {
         type='edit'
         inputs={fields}
         validators={validators}
-        initialFormValues={{ test: 'jared', 'user.name': 'jalal' }}
+        initialFormValues={{ test: 'jared',}}
         validateOnSubmit={true}
         onSubmit={handleSubmit}
         apiEndpoint="https://example.com/api/form"

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { normalizeNestedValues } from './helpers/utils';
 
 export const useFormarc = (initialFormValues = {}, validators, validationType) => {
-    const [formValues, setFormValues] = useState(normalizeNestedValues(initialFormValues))
+    const [formValues, setFormValues] = useState(initialFormValues)
     const [errorMessages, setErrorMessages] = useState({})
 
     // useEffect(() => {
@@ -20,43 +20,35 @@ export const useFormarc = (initialFormValues = {}, validators, validationType) =
     // }, [])
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        // let changingData;
-        if(name.includes('.')) {
-          setFormValues((prevValues) => ({
-            ...prevValues,
-            [name.split('.')[0]]: {
-              [name.split('.')[1]]: value
-            },
-          }));
-        } else {
-          setFormValues((prevValues) => ({
-            ...prevValues,
-            [name]: value
-          }));
-        }
-        if(validationType === 'onChange') validateField(e)
+      const { name, value } = e.target;
+      setFormValues((prevValues) => ({
+        ...prevValues,
+        [name]: value
+      }));
+      if(validationType === 'onChange') validateField(e)
     };
 
+    const handleCheckboxCheck = (e) => {
+      const { name } = e.target;
+      const value = e.target.checked
+      setFormValues((prevValues) => ({
+        ...prevValues,
+        [name]: value
+      }));
+      if(validationType === 'onChange') validateField(e)
+    }
+
     const handleDisabledFieldChange = (field, value) => {
-        if(field.name.includes('.')) {
-          setFormValues((prevValues) => ({
-            ...prevValues,
-            [field.name.split('.')[0]]: {
-              ...prevValues[field.name.split('.')[0]],
-              [field.name.split('.')[1]]: value
-            },
-          }));
-        } else {
-          setFormValues((prevValues) => ({
-            ...prevValues,
-            [field.name]: value,
-          }));
-        }
+      setFormValues((prevValues) => ({
+        ...prevValues,
+        [field.name]: value,
+      }));
     }
 
     const validateField = (e) => {
         const { name, value } = e.target;
+        const checkboxValue = e.target?.checked
+
         validators.map(validation => {
         if(validation.name === name) {
           if(validation.min && value < validation.min.value) {
@@ -79,6 +71,11 @@ export const useFormarc = (initialFormValues = {}, validators, validationType) =
               ...prevValues,
               [name]: validation.maxLength.error,
             }));
+          } else if(validation.required && !checkboxValue) {
+            setErrorMessages((prevValues) => ({
+              ...prevValues,
+              [name]: validation.required,
+            }));
           } else {
               setErrorMessages((prevValues) => ({
                 ...prevValues,
@@ -90,7 +87,9 @@ export const useFormarc = (initialFormValues = {}, validators, validationType) =
     }
 
     const validateForm = (payload, validators) => {
+      console.log('payload: ', payload)
       Object.entries(payload).forEach(([key, value]) => {
+        console.log('key: ', key, ' values: ', value)
         validators.map(validation => {
           if(validation.name === key) {
             if(validation.min && value < validation.min.value) {
@@ -113,6 +112,11 @@ export const useFormarc = (initialFormValues = {}, validators, validationType) =
                 ...prevValues,
                 [key]: validation.maxLength.error,
               }));
+            } else if(validation.required && !value) {
+              setErrorMessages((prevValues) => ({
+                ...prevValues,
+                [key]: validation.required,
+              }));
             } else {
                 setErrorMessages((prevValues) => ({
                   ...prevValues,
@@ -121,7 +125,6 @@ export const useFormarc = (initialFormValues = {}, validators, validationType) =
               }
            }
           })
-        // TODO: validate by going through valdiators and payload values
       });
     }
 
@@ -175,6 +178,7 @@ export const useFormarc = (initialFormValues = {}, validators, validationType) =
         setFormValues, 
         handleChange, 
         handleDisabledFieldChange,
+        handleCheckboxCheck,
         validateForm,
         // save,
         errorMessages

@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { FORM_TYPE, FORM_ELEMENT_TYPE } from './constants';
 import { normalizeParams } from './helpers/normalize-params';
-import { normalizeNestedValues, filterFormValues, customRequest } from './helpers/utils';
+import { normalizeNestedValues, filterFormValues, customRequest, formulateWithInitialValues } from './helpers/utils';
 import { useFormarc } from './useFormarc';
-// TODO: add type feature to validators property to define showing error messages during onChange or after submit (can be another prop for Podarc: validateOnChange, validateOnSubmit as in formarc)
-// TODO: add ignoreFor = 'patch' implementation(PARTIALLY DONE: for nested need to implement filter)
+// TODO: add validate type prop to Podarc(partially done : validateOnBlur is left)
 // TODO: custom request-i update etmek lazimdir. GET uchun ferqlidir biraz.
 
-const Formarc = ({ 
+const Formarc = ({
   type = 'save',
   inputs, 
   validators,
@@ -30,6 +29,7 @@ const Formarc = ({
     setFormValues,
     handleChange,
     handleDisabledFieldChange,
+    handleCheckboxCheck,
     validateForm,
     errorMessages
   } = useFormarc(initialFormValues, validators, validationType)
@@ -42,14 +42,10 @@ const Formarc = ({
     // if same field is given two different values(one from value property, one from initialFormValues), it will take value property for disabled input fields
     inputs.map(field => {
       if(field.value) {
-        if(field.name.includes('.')) {
-          initialFormValues[field.name.split('.')[0]][field.name.split('.')[1]] = field.value
-        } else {
-          initialFormValues[field.name] = field.value
-        }
+        initialFormValues[field.name] = field.value
       }
     })
-    setFormValues(normalizeNestedValues(initialFormValues))
+    setFormValues(initialFormValues)
   }, [])
 
   useEffect(() => {
@@ -59,12 +55,9 @@ const Formarc = ({
   const getValueToShowInField = (field) => {
     if(field.disabled) {
       return field.value
-    } else if(field.display === 'nested') {
-        return formValues[field.name.split('.')[0]][field.name.split('.')[1]]
     }
     return formValues[field.name]
   }
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,14 +74,17 @@ const Formarc = ({
       'GET';                            // For any other value of type(meaning 'view'), method is 'GET'
 
     try {
+      setFormValues(formulateWithInitialValues(formValues, inputs))
       const payload = filterFormValues(formValues, inputs)
 
       if(validationType === 'onSubmit') {
         validateForm(payload, validators)
       }
 
+      const normalizedNestedPayload = normalizeNestedValues({...payload})
+
       // add conditional check - if there is error message - request should NOT be sent
-      const response = customRequest(apiUrl, method, payload, additionalParams)
+      const response = customRequest(apiUrl, method, normalizedNestedPayload, additionalParams)
       if (!response.ok) {
         throw new Error('Failed to submit form');
       }
@@ -123,26 +119,17 @@ const Formarc = ({
         }
 
         if (field.disabled) {
-          if(field.display === 'nested') {
-            if(!formValues[field.name.split('.')[0]][field.name.split('.')[1]] && !initialFormValues[field.name]) {
-              handleDisabledFieldChange(field, field.value || ''); // Assuming field.value exists
-            }
-          } else {
-            if(!formValues[field.name] && !initialFormValues[field.name]) {
-              handleDisabledFieldChange(field, field.value || ''); // Assuming field.value exists
-            }
+          if(!formValues[field.name] && !initialFormValues[field.name]) {
+            handleDisabledFieldChange(field, field.value || ''); // Assuming field.value exists
           }
           // If the field is disabled and no value is set, set the value
         }
-
-        const isVisible = typeof field.visibleIf === 'function' ? field.visibleIf(formValues) : true
+        const isVisible = typeof field.visibleIf === 'function' ? field.visibleIf(normalizeNestedValues({...formValues})) : true
 
         if(type !== FORM_TYPE.VIEW) {
           if(field.disabled) {
             if(field.display === 'nested' && 
-              (!formValues[field.name.split('.')[0]][field.name.split('.')[1]] 
-              && !initialFormValues[field.name] && !field.value
-              ) || (!field.value && !initialFormValues[field.name] && !formValues[field.name])) 
+              (!field.value && !initialFormValues[field.name] && !formValues[field.name])) 
             {
               throw Error(`${field.name} Disabled field should have a given valuee...`)
             }
@@ -195,6 +182,40 @@ const Formarc = ({
                     ))}
                   </select>
                 </div>
+              )
+              break
+            case FORM_ELEMENT_TYPE.CHECKBOX:
+              input = (
+                <div key={index}>
+                  <input
+                    type="checkbox"
+                    name={field.name}
+                    required={field.required}
+                    className={`podarc-input ${inputClassName}`}
+                    value={getValueToShowInField(field) || false || field.value}
+                    onChange={handleCheckboxCheck}
+                    disabled={field.disabled}
+                  />
+                  <label htmlFor={field.name}>{field.label}</label>
+                  <span>{errorMessages[field.name]}</span>
+                </div> 
+              )
+              break
+            case FORM_ELEMENT_TYPE.DATE:
+              input = (
+                <div key={index}>
+                  <label htmlFor={field.name}>{field.label}</label>
+                  <input
+                    type="date"
+                    name={field.name}
+                    required={field.required}
+                    className={`podarc-input ${inputClassName}`}
+                    value={getValueToShowInField(field) || '' || field.value}
+                    onChange={handleChange}
+                    disabled={field.disabled}
+                  />
+                  <span>{errorMessages[field.name]}</span>
+                </div> 
               )
               break
           }
